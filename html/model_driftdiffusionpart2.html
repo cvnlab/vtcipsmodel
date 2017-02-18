@@ -1,0 +1,430 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Example script illustrating the Drift diffusion model (IPS prediction)</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-02-18"><meta name="DC.source" content="model_driftdiffusionpart2.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Example script illustrating the Drift diffusion model (IPS prediction)</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Add code to the MATLAB path</a></li><li><a href="#2">Load data</a></li><li><a href="#3">Prepare for model fitting</a></li><li><a href="#5">Fit models</a></li><li><a href="#7">Inspect modeling results</a></li></ul></div><h2>Add code to the MATLAB path<a name="1"></a></h2><pre class="codeinput"><span class="comment">% make sure to change this line to reflect where you have put</span>
+<span class="comment">% the knkutils repository (http://github.com/kendrickkay/knkutils/)</span>
+addpath(genpath(<span class="string">'/home/stone/kendrick/knkutils'</span>));
+</pre><h2>Load data<a name="2"></a></h2><pre class="codeinput"><span class="comment">% load in the data from the first experiment</span>
+a1 = load(<span class="string">'experiment1.mat'</span>);
+</pre><h2>Prepare for model fitting<a name="3"></a></h2><pre class="codeinput"><span class="comment">% define model names</span>
+modelnames = { <span class="keyword">...</span>
+  <span class="string">'Flat'</span> <span class="keyword">...</span><span class="comment">             % Flat-response model that predicts the same response level for each data point</span>
+  <span class="string">'RT monotonic'</span> <span class="keyword">...</span><span class="comment">     % Monotonic function of reaction time</span>
+  };
+
+<span class="comment">% which ROIs do we want to fit?</span>
+whroi = [8];  <span class="comment">% IPS</span>
+
+<span class="comment">% calculate some things</span>
+nr = length(whroi);       <span class="comment">% number of ROIs we will be fitting</span>
+nd = 22;                  <span class="comment">% number of data points (categorization task, exclude blank stimulus)</span>
+nfolds = nd;              <span class="comment">% number of folds of cross-validation</span>
+nm = length(modelnames);  <span class="comment">% number of models</span>
+
+<span class="comment">% prepare the data (group-averaged beta weights during categorization task, exclude blank stimulus)</span>
+data =        squish(permute(double(a1.groupbeta(whroi,2:end,2)),[2 3 1]),2);     <span class="comment">% 22 conditions x ROIs</span>
+datase =      squish(permute(double(a1.groupbetase(whroi,2:end,2)),[2 3 1]),2);   <span class="comment">% 22 conditions x ROIs</span>
+
+<span class="comment">% compute noise ceiling:</span>
+<span class="comment">%   nc is ROIs x 1</span>
+<span class="comment">%   ncdist is ROIs x simulations</span>
+[nc,ncdist] = calcnoiseceiling(data',datase');
+</pre><pre class="codeoutput">calculating noise ceiling..
+.
+.
+.
+.
+..
+.
+.
+.
+..
+.
+.
+.
+.
+.
+..
+done.
+</pre><pre class="codeinput"><span class="comment">% define the metric to use when quantifying model accuracy.</span>
+<span class="comment">% we use an R^2 metric where variance is computed relative to 0% BOLD change.</span>
+metricfun = @(x,y) calccod(x,y,1,0,0);
+</pre><h2>Fit models<a name="5"></a></h2><pre class="codeinput"><span class="comment">% initialize outputs (details provided below)</span>
+modelfit =             NaN*zeros(nd,nr,nm);      <span class="comment">% data points x ROIs x models</span>
+modelparams =          cell(1,nm);               <span class="comment">% 1 x models (each element is parameters x ROIs)</span>
+modelpred =            NaN*zeros(nd,nr,nm);      <span class="comment">% data points (2*n) x ROIs x models</span>
+modelperformance =     NaN*zeros(nr,nm);         <span class="comment">% ROIs x models</span>
+
+<span class="comment">% fit models</span>
+<span class="keyword">for</span> xx=1:2
+
+  <span class="keyword">switch</span> xx
+  <span class="keyword">case</span> 1
+
+    <span class="comment">% in this case, we do not cross-validate and instead just fit all the data</span>
+    xvalscheme = 0;
+    extraopt = {<span class="string">'dosave'</span>,<span class="string">'modelfit'</span>};  <span class="comment">% indicate that we want the 'modelfit' output</span>
+
+  <span class="keyword">case</span> 2
+
+    <span class="comment">% in this case, we perform cross-validation, so we need to define the cross-validation scheme</span>
+    xvalscheme = ones(nfolds,nd);
+    <span class="keyword">for</span> p=1:nfolds
+      ix = picksubset(1:nd,[nfolds p]);
+      xvalscheme(p,ix) = -1;
+    <span class="keyword">end</span>
+    extraopt = {};
+
+    <span class="comment">% compute how we can go back to the original order</span>
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme);
+
+  <span class="keyword">end</span>
+
+  <span class="comment">% loop over models</span>
+  <span class="keyword">for</span> mm=1:nm
+
+    <span class="keyword">switch</span> mm
+
+    <span class="comment">% Flat-response model</span>
+    <span class="keyword">case</span> 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% RT monotonic model</span>
+    <span class="keyword">case</span> 2
+      X = calczscore(a1.grouprt(2:end)'); assert(size(X,1)==nd);
+      seed0 = [.5 1 0 .5];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,4); Inf(1,4)] <span class="keyword">...</span>
+                              @(p,x) p(1)*tanh(p(2)*x+p(3))+p(4)}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="keyword">end</span>
+
+    <span class="comment">% finally, fit the model</span>
+    results = fitnonlinearmodel(opt1);
+
+    <span class="comment">% take the results and store them</span>
+    <span class="keyword">switch</span> xx
+    <span class="keyword">case</span> 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    <span class="keyword">case</span> 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    <span class="keyword">end</span>
+
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">*** fitnonlinearmodel: started at 18-Feb-2017 09:36:40. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 1, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 1). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 ].
+      the estimated parameters are [0.270 ].
+    trainperformance is 89.61. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 1) took 0.4 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:36:41 (0.0 minutes). ***
+*** fitnonlinearmodel: started at 18-Feb-2017 09:36:41. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 1, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 1). ***
+  starting resampling case 1 of 1.
+      the seed is [0.500 1.000 0.000 0.500 ].
+      the estimated parameters are [202.496 0.604 4.326 -202.122 ].
+    trainperformance is 94.24. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 1) took 0.9 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:36:42 (0.0 minutes). ***
+*** fitnonlinearmodel: started at 18-Feb-2017 09:36:42. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 1, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 1). ***
+  starting resampling case 1 of 22.
+      the seed is [0.100 ].
+      the estimated parameters are [0.276 ].
+    trainperformance is 90.36. testperformance is 26.81.
+
+[...SNIP...]
+
+  starting resampling case 22 of 22.
+      the seed is [0.500 1.000 0.000 0.500 ].
+      the estimated parameters are [5.705 0.503 2.377 -5.301 ].
+    trainperformance is 94.39. testperformance is 88.63.
+  aggregatedtestperformance is 92.94.
+*** fitnonlinearmodel: voxel 1 (1 of 1) took 11.3 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:36:53 (0.2 minutes). ***
+</pre><pre class="codeinput"><span class="comment">% undo the effect of the cross-validation re-ordering. after this step,</span>
+<span class="comment">% the data points are back in the original order.</span>
+modelpred = modelpred(xvalschemeREV,:,:);
+
+<span class="comment">% ok, the model fitting is complete.</span>
+<span class="comment">%</span>
+<span class="comment">% modeling results are compiled into the following variables:</span>
+<span class="comment">% - modelfit is data points x ROIs x models. this gives, for each model</span>
+<span class="comment">%   applied to each ROI, the model fit to all data points (no cross-validation).</span>
+<span class="comment">% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,</span>
+<span class="comment">%   which stores the estimated parameters from each model applied to each ROI.</span>
+<span class="comment">% - modelpred is data points x ROIs x models. this is the set of cross-validated</span>
+<span class="comment">%   model predictions, aggregated across all cross-validation iterations.</span>
+<span class="comment">% - modelperformance is ROIs x models. this is the quantification of model</span>
+<span class="comment">%   cross-validation accuracy.</span>
+</pre><h2>Inspect modeling results<a name="7"></a></h2><pre class="codeinput"><span class="comment">% define</span>
+rr = 1;            <span class="comment">% which ROI to look at</span>
+whmodel = [2];     <span class="comment">% which model to look at</span>
+
+<span class="comment">% make a figure</span>
+figure; setfigurepos([100 100 600 200]); hold <span class="string">on</span>;
+xxx = 1+(1:nd);  <span class="comment">% leave a spot for the blank stimulus</span>
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,<span class="string">'FaceColor'</span>,<span class="string">'k'</span>);
+set(errorbar2(xxx,yyy,yyyse,<span class="string">'v'</span>,<span class="string">'k-'</span>,<span class="string">'LineWidth'</span>,2),<span class="string">'Color'</span>,[.5 .5 .5]);
+cmap0 = [1 0 0];
+h = []; h2 = [];
+<span class="keyword">for</span> mm=1:length(whmodel)
+  h(mm)  = plot(xxx, modelfit(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,(cmap0(mm,:)+2*[1 1 1])/3,<span class="string">'LineWidth'</span>,2);
+  h2(mm) = plot(xxx,modelpred(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,cmap0(mm,:),<span class="string">'LineWidth'</span>,2);
+<span class="keyword">end</span>
+ylabel(<span class="string">'BOLD response (% change)'</span>);
+legend(h2,modelnames(whmodel),<span class="string">'Location'</span>,<span class="string">'EastOutside'</span>);
+xlabel(<span class="string">'Stimulus number'</span>);
+title(sprintf(<span class="string">'Modeling results for %s'</span>,a1.roilabels{whroi(rr)}));
+</pre><img vspace="5" hspace="5" src="model_driftdiffusionpart2_01.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example script illustrating the Drift diffusion model (IPS prediction) 
+
+%% Add code to the MATLAB path
+
+% make sure to change this line to reflect where you have put
+% the knkutils repository (http://github.com/kendrickkay/knkutils/)
+addpath(genpath('/home/stone/kendrick/knkutils'));
+
+%% Load data
+
+% load in the data from the first experiment
+a1 = load('experiment1.mat');
+
+%% Prepare for model fitting
+
+% define model names
+modelnames = { ...
+  'Flat' ...             % Flat-response model that predicts the same response level for each data point
+  'RT monotonic' ...     % Monotonic function of reaction time
+  };
+  
+% which ROIs do we want to fit?
+whroi = [8];  % IPS
+
+% calculate some things
+nr = length(whroi);       % number of ROIs we will be fitting
+nd = 22;                  % number of data points (categorization task, exclude blank stimulus)
+nfolds = nd;              % number of folds of cross-validation 
+nm = length(modelnames);  % number of models
+
+% prepare the data (group-averaged beta weights during categorization task, exclude blank stimulus)
+data =        squish(permute(double(a1.groupbeta(whroi,2:end,2)),[2 3 1]),2);     % 22 conditions x ROIs
+datase =      squish(permute(double(a1.groupbetase(whroi,2:end,2)),[2 3 1]),2);   % 22 conditions x ROIs
+
+% compute noise ceiling:
+%   nc is ROIs x 1
+%   ncdist is ROIs x simulations
+[nc,ncdist] = calcnoiseceiling(data',datase');
+%%
+
+% define the metric to use when quantifying model accuracy.
+% we use an R^2 metric where variance is computed relative to 0% BOLD change.
+metricfun = @(x,y) calccod(x,y,1,0,0);
+
+%% Fit models
+
+% initialize outputs (details provided below)
+modelfit =             NaN*zeros(nd,nr,nm);      % data points x ROIs x models
+modelparams =          cell(1,nm);               % 1 x models (each element is parameters x ROIs)
+modelpred =            NaN*zeros(nd,nr,nm);      % data points (2*n) x ROIs x models
+modelperformance =     NaN*zeros(nr,nm);         % ROIs x models
+
+% fit models
+for xx=1:2
+
+  switch xx
+  case 1
+
+    % in this case, we do not cross-validate and instead just fit all the data
+    xvalscheme = 0;
+    extraopt = {'dosave','modelfit'};  % indicate that we want the 'modelfit' output
+
+  case 2
+
+    % in this case, we perform cross-validation, so we need to define the cross-validation scheme
+    xvalscheme = ones(nfolds,nd);
+    for p=1:nfolds
+      ix = picksubset(1:nd,[nfolds p]);
+      xvalscheme(p,ix) = -1;
+    end
+    extraopt = {};
+
+    % compute how we can go back to the original order
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme);
+
+  end
+
+  % loop over models
+  for mm=1:nm
+
+    switch mm
+
+    % Flat-response model
+    case 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % RT monotonic model
+    case 2
+      X = calczscore(a1.grouprt(2:end)'); assert(size(X,1)==nd);
+      seed0 = [.5 1 0 .5];
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,4); Inf(1,4)] ...
+                              @(p,x) p(1)*tanh(p(2)*x+p(3))+p(4)}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    end
+
+    % finally, fit the model
+    results = fitnonlinearmodel(opt1);
+
+    % take the results and store them
+    switch xx
+    case 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    case 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    end
+
+  end
+
+end
+%%
+
+% undo the effect of the cross-validation re-ordering. after this step,
+% the data points are back in the original order.
+modelpred = modelpred(xvalschemeREV,:,:);
+
+% ok, the model fitting is complete.
+%
+% modeling results are compiled into the following variables:
+% - modelfit is data points x ROIs x models. this gives, for each model
+%   applied to each ROI, the model fit to all data points (no cross-validation).
+% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,
+%   which stores the estimated parameters from each model applied to each ROI.
+% - modelpred is data points x ROIs x models. this is the set of cross-validated 
+%   model predictions, aggregated across all cross-validation iterations.
+% - modelperformance is ROIs x models. this is the quantification of model
+%   cross-validation accuracy.
+
+%% Inspect modeling results
+
+% define
+rr = 1;            % which ROI to look at
+whmodel = [2];     % which model to look at
+
+% make a figure
+figure; setfigurepos([100 100 600 200]); hold on;
+xxx = 1+(1:nd);  % leave a spot for the blank stimulus
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,'FaceColor','k');
+set(errorbar2(xxx,yyy,yyyse,'v','k-','LineWidth',2),'Color',[.5 .5 .5]);
+cmap0 = [1 0 0];
+h = []; h2 = [];
+for mm=1:length(whmodel)
+  h(mm)  = plot(xxx, modelfit(:,rr,whmodel(mm)),'o-','Color',(cmap0(mm,:)+2*[1 1 1])/3,'LineWidth',2);
+  h2(mm) = plot(xxx,modelpred(:,rr,whmodel(mm)),'o-','Color',cmap0(mm,:),'LineWidth',2);
+end
+ylabel('BOLD response (% change)');
+legend(h2,modelnames(whmodel),'Location','EastOutside');
+xlabel('Stimulus number');
+title(sprintf('Modeling results for %s',a1.roilabels{whroi(rr)}));
+%%
+
+##### SOURCE END #####
+--></body></html>

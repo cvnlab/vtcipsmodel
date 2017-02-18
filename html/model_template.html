@@ -1,0 +1,875 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Example script illustrating the Template model and various control models</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-02-18"><meta name="DC.source" content="model_template.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Example script illustrating the Template model and various control models</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Add code to the MATLAB path</a></li><li><a href="#2">Load data</a></li><li><a href="#3">Do some inspections</a></li><li><a href="#6">Perform some pre-processing of the stimuli</a></li><li><a href="#7">Prepare V1-like representation of the stimuli</a></li><li><a href="#10">Compute templates</a></li><li><a href="#11">Pre-compute some quantities</a></li><li><a href="#12">Prepare for model fitting</a></li><li><a href="#14">Fit models</a></li><li><a href="#16">Inspect modeling results</a></li></ul></div><h2>Add code to the MATLAB path<a name="1"></a></h2><pre class="codeinput"><span class="comment">% make sure to change this line to reflect where you have put</span>
+<span class="comment">% the knkutils repository (http://github.com/kendrickkay/knkutils/)</span>
+addpath(genpath(<span class="string">'/home/stone/kendrick/knkutils'</span>));
+</pre><h2>Load data<a name="2"></a></h2><pre class="codeinput"><span class="comment">% load in the data from the first experiment</span>
+a1 = load(<span class="string">'experiment1.mat'</span>);
+</pre><h2>Do some inspections<a name="3"></a></h2><pre class="codeinput"><span class="comment">% look at the stimuli (first frame of each of 23 stimuli).</span>
+<span class="comment">% the order is down and then right.</span>
+figure; setfigurepos([100 100 600 400]);
+imagesc(makeimagestack(permute(double(a1.stimuli(:,:,1,:)),[1 2 4 3]),[],0));
+colormap(gray); colorbar;
+axis <span class="string">image</span> <span class="string">tight</span>;
+title(<span class="string">'Stimuli'</span>);
+</pre><img vspace="5" hspace="5" src="model_template_01.png" alt=""> <pre class="codeinput"><span class="comment">% look at the group-averaged beta weights for VWFA during the fixation task</span>
+figure; setfigurepos([100 100 600 200]); hold <span class="string">on</span>;
+beta =   a1.groupbeta(5,:,1);
+betase = a1.groupbetase(5,:,1);
+bar(beta);
+errorbar2(1:length(beta),beta,betase,<span class="string">'v'</span>,<span class="string">'r-'</span>,<span class="string">'LineWidth'</span>,2);
+xlabel(<span class="string">'Stimulus number'</span>);
+ylabel(<span class="string">'BOLD signal (% change)'</span>);
+title(<span class="string">'VWFA responses during fixation task'</span>);
+</pre><img vspace="5" hspace="5" src="model_template_02.png" alt=""> <h2>Perform some pre-processing of the stimuli<a name="6"></a></h2><pre class="codeinput"><span class="comment">% The rationale is that there are a series of image processing steps</span>
+<span class="comment">% that occur before the free parameters of the model take influence.</span>
+<span class="comment">% Thus, we can do these computations up front before we move</span>
+<span class="comment">% on to model fitting.</span>
+
+<span class="comment">% convert to single format so that we can actually do computations.</span>
+<span class="comment">% also, reshape so that all of the stimulus images lie along the third dimension.</span>
+X = reshape(single(a1.stimuli),[500 500 10*23]);
+
+<span class="comment">% resize the images to 250 pixels x 250 pixels to reduce computational burden.</span>
+X = single(processmulti(@imresize,double(X),[250 250]));  <span class="comment">% dimensions are now 250 x 250 x 10*23</span>
+
+<span class="comment">% note that pixel values are proportional to actual luminance values,</span>
+<span class="comment">% so no special handling of gamma is required.</span>
+
+<span class="comment">% convert the pixel range from [0,254] to [-.5,.5] by rescaling values</span>
+<span class="comment">% and subtracting off the value corresponding to the gray background.</span>
+<span class="comment">% after this step, the gray background is at 0.</span>
+X = (X/254) - .5;
+</pre><h2>Prepare V1-like representation of the stimuli<a name="7"></a></h2><pre class="codeinput"><span class="comment">% define</span>
+pxtodeg = 1/240 * 2;       <span class="comment">% 240 pixels correspond to 2 degrees of visual angle</span>
+stimsize = 500 * pxtodeg;  <span class="comment">% compute the total size of the stimulus in deg</span>
+
+<span class="comment">% next, we want to project onto V1-like filters.</span>
+<span class="comment">% we will use filters tuned at 4 cycles per deg.</span>
+
+<span class="comment">% how many cycles per stimulus field-of-view should the filters be tuned at?</span>
+cpfov = 4*stimsize;
+
+<span class="comment">% go ahead and do the projection.  we will get a lot of outputs, but</span>
+<span class="comment">% the one we care about is f, which has dimensions 10*23 images x 16384 channels.</span>
+<span class="comment">% the channels are ordered like (2 phases)*(8 orientations)*(32 positions x 32 positions).</span>
+[f,gbrs,gaus,sds,indices,info] = applymultiscalegaborfilters(squish(X,2)',cpfov,-1,1,8,2,0.01,2,0);
+</pre><pre class="codeoutput">grid is 32 x 32, gbrsize is 52 (sd is 8.4325781308), indices is [1 9 17 25 33 41 49 57 65 73 81 89 97 105 113 121 129 137 145 153 161 169 177 185 193 201 209 217 225 233 241 249]
+</pre><pre class="codeinput"><span class="comment">% combine quadrature-phase filter outputs (complex-cell energy model)</span>
+f = sqrt(blob(f.^2,2,2));  <span class="comment">% dimensions are now 10*23 images x 8192 channels</span>
+
+<span class="comment">% inspect filter outputs for the first image of the 5th stimulus.</span>
+<span class="comment">% the order is 0 deg (horizontal filter), 22.5 deg, 44.5 deg, etc., rotating counter-clockwise.</span>
+figure; setfigurepos([100 100 800 200]);
+imagesc(makeimagestack(permute(reshape(f(10*4+1,:),8,32,32),[2 3 1]),[],[],[1 8]));
+colormap(hot); colorbar;
+axis <span class="string">image</span> <span class="string">tight</span>;
+title(<span class="string">'Filter outputs'</span>);
+</pre><img vspace="5" hspace="5" src="model_template_03.png" alt=""> <pre class="codeinput"><span class="comment">% now we want to apply divisive normalization.</span>
+
+<span class="comment">% do some reshaping</span>
+f = permute(reshape(f,10,23,[]),[1 3 2]);  <span class="comment">% now: 10 x 8192 channels x 23</span>
+
+<span class="comment">% compute the average across 8 orientations (at each position) and place in the imaginary component</span>
+f = f + j*upsamplematrix(blob(f,2,8)/8,8,2,[],<span class="string">'nearest'</span>);
+
+<span class="comment">% define parameters (taken identically from Kay et al., PLOS Comp Bio, 2013)</span>
+ee = 1;
+ss = 0.5;
+
+<span class="comment">% perform divisive normalization</span>
+f = real(f).^ee./(ss.^ee+imag(f).^ee);
+
+<span class="comment">% the dimensions of f are now 10 images x 8192 channels x 23 stimuli.</span>
+
+<span class="comment">% NOTE:</span>
+<span class="comment">% - In the paper, one of the control models is called "Template model (omit first stage)".</span>
+<span class="comment">%   This model omits the first stage of the model and computes a template operation on a</span>
+<span class="comment">%   pixel representation of the stimuli. To implement this model, instead of performing</span>
+<span class="comment">%   the steps above, one would just prepare f as:</span>
+<span class="comment">%     f = permute(reshape(squish(X+.5,2),250*250,10,23),[2 1 3]);</span>
+<span class="comment">%   This sets up f with dimensions 10 images x (250 pixels * 250 pixels) x 23 stimuli</span>
+<span class="comment">%   and places the units of f into the range [0,1].</span>
+</pre><h2>Compute templates<a name="10"></a></h2><pre class="codeinput"><span class="comment">% which stimuli do we want to create templates from?</span>
+templateix = [9 5];   <span class="comment">% word, face</span>
+
+<span class="comment">% calculate templates</span>
+templates = [];  <span class="comment">% dimensions will be 2 templates x 8192 channels</span>
+<span class="keyword">for</span> qq=1:length(templateix)
+  templates(qq,:) = mean(f(:,:,templateix(qq)),1);  <span class="comment">% compute the mean of the 10 images in the V1-like representation</span>
+<span class="keyword">end</span>
+
+<span class="comment">% NOTE:</span>
+<span class="comment">% - A few different control models are evaluated in the paper, based on modifying</span>
+<span class="comment">%   the template used in the model.</span>
+<span class="comment">%   - To implement "Template model (non-selective template)", one would do:</span>
+<span class="comment">%       templates(3,:) = 1;</span>
+<span class="comment">%   - To implement "Template model (mixed template)", one would do:</span>
+<span class="comment">%       templates(3,:) = mean(unitlength(templates(1:2,:),2),1);  % this template is a mix of "word" and "face"</span>
+<span class="comment">%   - To implement "Template model (random template)", one would do:</span>
+<span class="comment">%       templates(3,:) = rand(1,size(templates,2));</span>
+</pre><h2>Pre-compute some quantities<a name="11"></a></h2><pre class="codeinput"><span class="comment">% To reduce computational time, we pre-compute as much as we can before we proceed to model fitting.</span>
+
+<span class="comment">% compute "A" which is the dot-product of the stimulus and the template (S-dot-T in the paper)</span>
+A = squish(permute(f,[1 3 2]),2) * templates';  <span class="comment">% 10*23 images x 2 templates</span>
+
+<span class="comment">% compute "B" which is the average of all of the channels in the stimulus (S-bar in the paper)</span>
+B = mean(squish(permute(f,[1 3 2]),2),2);       <span class="comment">% 10*23 images x 1</span>
+</pre><h2>Prepare for model fitting<a name="12"></a></h2><pre class="codeinput"><span class="comment">% define model names</span>
+modelnames = { <span class="keyword">...</span>
+  <span class="string">'Flat'</span> <span class="keyword">...</span><span class="comment">                % Flat-response model that predicts the same response level for each data point</span>
+  <span class="string">'CategoryWord'</span> <span class="keyword">...</span><span class="comment">        % Category model using words vs. non-words</span>
+  <span class="string">'CategoryFace'</span> <span class="keyword">...</span><span class="comment">        % Category model using faces vs. non-faces</span>
+  <span class="string">'TemplateWordOnlySub'</span> <span class="keyword">...</span><span class="comment"> % Template model (only subtractive normalization) using a word template</span>
+  <span class="string">'TemplateWordOnlyDiv'</span> <span class="keyword">...</span><span class="comment"> % Template model (only divisive normalization) using a word template</span>
+  <span class="string">'TemplateWord'</span> <span class="keyword">...</span><span class="comment">        % Template model using a word template</span>
+  <span class="string">'TemplateFaceOnlySub'</span> <span class="keyword">...</span><span class="comment"> % Template model (only subtractive normalization) using a face template</span>
+  <span class="string">'TemplateFaceOnlyDiv'</span> <span class="keyword">...</span><span class="comment"> % Template model (only divisive normalization) using a face template</span>
+  <span class="string">'TemplateFace'</span> <span class="keyword">...</span><span class="comment">        % Template model using a face template</span>
+  };
+
+<span class="comment">% which ROIs do we want to fit?</span>
+whroi = [5 6];  <span class="comment">% VWFA, FFA</span>
+
+<span class="comment">% calculate some things</span>
+nr = length(whroi);      <span class="comment">% number of ROIs we will be fitting</span>
+nd = 23;                 <span class="comment">% number of data points</span>
+nfolds = 23;             <span class="comment">% number of folds of cross-validation to perform</span>
+nm = length(modelnames); <span class="comment">% number of models</span>
+
+<span class="comment">% prepare the data (group-averaged beta weights during the fixation task)</span>
+data =   permute(double(a1.groupbeta(whroi,:,1)),[2 1 3]);    <span class="comment">% 23 stimuli x ROIs</span>
+datase = permute(double(a1.groupbetase(whroi,:,1)),[2 1 3]);  <span class="comment">% 23 stimuli x ROIs</span>
+
+<span class="comment">% compute noise ceilings:</span>
+<span class="comment">%   nc is ROIs x 1</span>
+<span class="comment">%   ncdist is ROIs x simulations</span>
+[nc,ncdist] = calcnoiseceiling(data',datase');
+</pre><pre class="codeoutput">calculating noise ceiling..
+.
+..
+.
+..
+..
+.
+..
+..
+..
+.
+.
+.
+done.
+</pre><pre class="codeinput"><span class="comment">% define the metric to use when quantifying model accuracy.</span>
+<span class="comment">% we use an R^2 metric where variance is computed relative to 0% BOLD change.</span>
+metricfun = @(x,y) calccod(x,y,1,0,0);
+
+<span class="comment">% prepare category labels</span>
+categories = a1.groupcategoryjudgment;
+categories{1} = <span class="string">''</span>;
+</pre><h2>Fit models<a name="14"></a></h2><pre class="codeinput"><span class="comment">% initialize outputs (details provided below)</span>
+modelfit =             NaN*zeros(nd,nr,nm);      <span class="comment">% data points x ROIs x models</span>
+modelparams =          cell(1,nm);               <span class="comment">% 1 x models (each element is parameters x ROIs)</span>
+modelpred =            NaN*zeros(nd,nr,nm);      <span class="comment">% data points x ROIs x models</span>
+modelperformance =     NaN*zeros(nr,nm);         <span class="comment">% ROIs x models</span>
+
+<span class="comment">% fit models</span>
+<span class="keyword">for</span> xx=1:2
+
+  <span class="keyword">switch</span> xx
+  <span class="keyword">case</span> 1
+
+    <span class="comment">% in this case, we do not cross-validate and instead just fit all the data</span>
+    xvalscheme = 0;
+    extraopt = {<span class="string">'dosave'</span>,<span class="string">'modelfit'</span>};  <span class="comment">% indicate that we want the 'modelfit' output</span>
+
+  <span class="keyword">case</span> 2
+
+    <span class="comment">% in this case, we perform cross-validation, so we need to define the cross-validation scheme</span>
+    xvalscheme = ones(nfolds,nd);
+    <span class="keyword">for</span> p=1:nfolds
+      ix = picksubset(1:nd,[nfolds p]);
+      xvalscheme(p,ix) = -1;
+    <span class="keyword">end</span>
+    extraopt = {};
+
+    <span class="comment">% compute how we can go back to the original order</span>
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme);
+
+  <span class="keyword">end</span>
+
+  <span class="comment">% loop over models</span>
+  <span class="keyword">for</span> mm=1:nm
+
+    <span class="keyword">switch</span> mm
+
+    <span class="comment">% Flat-response model</span>
+    <span class="keyword">case</span> 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Category model using words vs. non-words</span>
+    <span class="keyword">case</span> 2
+      ix = ismember(categories,<span class="string">'WORD'</span>);
+      X = zeros(nd,2);
+      X( ix,1) = 1;  <span class="comment">% first column is 1 for words</span>
+      X(~ix,2) = 1;  <span class="comment">% second column is 1 for non-words</span>
+      seed0 = 0.1 * ones(1,2);
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,2); Inf(1,2)] @(p,x) x*p'}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Category model using faces vs. non-faces</span>
+    <span class="keyword">case</span> 3
+      ix = ismember(categories,<span class="string">'FACE'</span>);
+      X = zeros(nd,2);
+      X( ix,1) = 1;  <span class="comment">% first column is 1 for faces</span>
+      X(~ix,2) = 1;  <span class="comment">% second column is 1 for non-faces</span>
+      seed0 = 0.1 * ones(1,2);
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,2); Inf(1,2)] @(p,x) x*p'}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Template models</span>
+    <span class="keyword">case</span> {4 5 6 7 8 9}
+
+      <span class="comment">% calculate some flags</span>
+      complextyp = mod2(mm,3);       <span class="comment">% 1 means only subtractive; 2 means only divisive; 3 means both</span>
+      templatenum = ceil((mm-3)/3);  <span class="comment">% 1 means use word template; 2 means use face template</span>
+
+      <span class="comment">% pre-condition A and B. we collect the results into</span>
+      <span class="comment">% stimAB which is 10*23 images x 2, where the columns contain the</span>
+      <span class="comment">% pre-conditioned A and the pre-conditioned B.</span>
+      stimAB = [A(:,templatenum)/mean(A(:,templatenum)) B/mean(B)];
+
+      <span class="keyword">switch</span> complextyp
+
+      <span class="comment">% this is the only subtractive model</span>
+      <span class="keyword">case</span> 1
+        cs = [0 .5 1 1.5 2 3 5];
+        seed0 = [];
+        cnt = 1;
+        <span class="keyword">for</span> q=1:length(cs)
+          seed0(cnt,:) = [10 cs(q)];
+          cnt = cnt + 1;
+        <span class="keyword">end</span>
+        opt1 = struct(<span class="string">'stimulus'</span>,permute(reshape(stimAB,[10 nd 2]),[2 3 1]),<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                      <span class="string">'model'</span>,{{[] [-Inf(1,2); Inf(1,2)] <span class="keyword">...</span>
+                                @(p,x) p(1) * posrect(x(:,1)-p(2)*x(:,2))}}, <span class="keyword">...</span>
+                      <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                      <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+      <span class="comment">% this is the only divisive model</span>
+      <span class="keyword">case</span> 2
+        bs = [.01 .05 .1 .5 1 5 10];
+        seed0 = [];
+        cnt = 1;
+        <span class="keyword">for</span> p=1:length(bs)
+          seed0(cnt,:) = [10 bs(p)];
+          cnt = cnt + 1;
+        <span class="keyword">end</span>
+        opt1 = struct(<span class="string">'stimulus'</span>,permute(reshape(stimAB,[10 nd 2]),[2 3 1]),<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                      <span class="string">'model'</span>,{{[] [-Inf(1,2); Inf(1,2)] <span class="keyword">...</span>
+                                @(p,x) p(1) * (x(:,1) ./ (p(2)+x(:,2)))}}, <span class="keyword">...</span>
+                      <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                      <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+      <span class="comment">% this is the full model</span>
+      <span class="keyword">case</span> 3
+        bs = [.01 .05 .1 .5 1 5 10];
+        cs = [0 .5 1 1.5 2 3 5];
+        seed0 = [];
+        cnt = 1;
+        <span class="keyword">for</span> p=1:length(bs)
+          <span class="keyword">for</span> q=1:length(cs)
+            seed0(cnt,:) = [10 bs(p) cs(q)];
+            cnt = cnt + 1;
+          <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        opt1 = struct(<span class="string">'stimulus'</span>,permute(reshape(stimAB,[10 nd 2]),[2 3 1]),<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                      <span class="string">'model'</span>,{{[] [-Inf(1,3); Inf(1,3)] <span class="keyword">...</span>
+                                @(p,x) p(1) * (posrect(x(:,1)-p(3)*x(:,2)) ./ (p(2)+x(:,2)))}}, <span class="keyword">...</span>
+                      <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                      <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+      <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+    <span class="comment">% finally, fit the model</span>
+    results = fitnonlinearmodel(opt1);
+
+    <span class="comment">% take the results and store them</span>
+    <span class="keyword">switch</span> xx
+    <span class="keyword">case</span> 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    <span class="keyword">case</span> 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    <span class="keyword">end</span>
+
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">*** fitnonlinearmodel: started at 18-Feb-2017 09:32:31. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 2, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 ].
+      the estimated parameters are [0.239 ].
+    trainperformance is 76.75. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 2) took 0.4 seconds. ***
+*** fitnonlinearmodel: processing voxel 2 (2 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 ].
+      the estimated parameters are [0.317 ].
+    trainperformance is 61.28. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 2 (2 of 2) took 0.4 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:32:32 (0.0 minutes). ***
+*** fitnonlinearmodel: started at 18-Feb-2017 09:32:32. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 2, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 0.100 ].
+      the estimated parameters are [0.407 0.180 ].
+    trainperformance is 90.13. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 2) took 0.2 seconds. ***
+*** fitnonlinearmodel: processing voxel 2 (2 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 0.100 ].
+      the estimated parameters are [0.295 0.324 ].
+    trainperformance is 61.38. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 2 (2 of 2) took 0.2 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:32:32 (0.0 minutes). ***
+*** fitnonlinearmodel: started at 18-Feb-2017 09:32:32. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 2, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 0.100 ].
+      the estimated parameters are [0.212 0.249 ].
+    trainperformance is 77.10. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 2) took 0.0 seconds. ***
+*** fitnonlinearmodel: processing voxel 2 (2 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 0.100 ].
+      the estimated parameters are [0.622 0.209 ].
+    trainperformance is 81.37. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+
+[...SNIP...]
+
+    trying seed 47 of 49.
+      the seed is [10.000 10.000 2.000 ].
+      the estimated parameters are [10.000 10.000 2.000 ].
+    trying seed 48 of 49.
+      the seed is [10.000 10.000 3.000 ].
+      the estimated parameters are [10.000 10.000 3.000 ].
+    trying seed 49 of 49.
+      the seed is [10.000 10.000 5.000 ].
+      the estimated parameters are [10.000 10.000 5.000 ].
+    seed 9 was best. final estimated parameters are [0.851 0.099 0.500 ].
+    trainperformance is 90.52. testperformance is 0.00.
+  aggregatedtestperformance is 84.79.
+*** fitnonlinearmodel: voxel 2 (2 of 2) took 71.9 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:35:44 (1.2 minutes). ***
+</pre><pre class="codeinput"><span class="comment">% undo the effect of the cross-validation re-ordering. after this step,</span>
+<span class="comment">% the data points are back in the original order.</span>
+modelpred = modelpred(xvalschemeREV,:,:);
+
+<span class="comment">% ok, the model fitting is complete.</span>
+<span class="comment">%</span>
+<span class="comment">% modeling results are compiled into the following variables:</span>
+<span class="comment">% - modelfit is data points x ROIs x models. this gives, for each model</span>
+<span class="comment">%   applied to each ROI, the model fit to all data points (no cross-validation).</span>
+<span class="comment">% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,</span>
+<span class="comment">%   which stores the estimated parameters from each model applied to each ROI.</span>
+<span class="comment">% - modelpred is data points x ROIs x models. this is the set of cross-validated</span>
+<span class="comment">%   model predictions, aggregated across all cross-validation iterations.</span>
+<span class="comment">% - modelperformance is ROIs x models. this is the quantification of model</span>
+<span class="comment">%   cross-validation accuracy.</span>
+</pre><h2>Inspect modeling results<a name="16"></a></h2><pre class="codeinput"><span class="comment">% define</span>
+rr = 1;           <span class="comment">% which ROI to look at</span>
+whmodel = [2 6];  <span class="comment">% which models to look at</span>
+
+<span class="comment">% make a figure</span>
+figure; setfigurepos([100 100 600 250]); hold <span class="string">on</span>;
+xxx = 1:nd;
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,<span class="string">'FaceColor'</span>,<span class="string">'k'</span>);
+set(errorbar2(xxx,yyy,yyyse,<span class="string">'v'</span>,<span class="string">'k-'</span>,<span class="string">'LineWidth'</span>,2),<span class="string">'Color'</span>,[.5 .5 .5]);
+cmap0 = [0 0 1;
+         1 0 0];
+h = []; h2 = [];
+<span class="keyword">for</span> mm=1:length(whmodel)
+  h(mm)  = plot(xxx, modelfit(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,(cmap0(mm,:)+2*[1 1 1])/3,<span class="string">'LineWidth'</span>,2);
+  h2(mm) = plot(xxx,modelpred(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,cmap0(mm,:),<span class="string">'LineWidth'</span>,2);
+<span class="keyword">end</span>
+ylabel(<span class="string">'BOLD response (% change)'</span>);
+legend(h2,modelnames(whmodel),<span class="string">'Location'</span>,<span class="string">'EastOutside'</span>);
+xlabel(<span class="string">'Stimulus number'</span>);
+title(sprintf(<span class="string">'Modeling results for %s'</span>,a1.roilabels{whroi(rr)}));
+</pre><img vspace="5" hspace="5" src="model_template_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example script illustrating the Template model and various control models
+
+%% Add code to the MATLAB path
+
+% make sure to change this line to reflect where you have put
+% the knkutils repository (http://github.com/kendrickkay/knkutils/)
+addpath(genpath('/home/stone/kendrick/knkutils'));
+
+%% Load data
+
+% load in the data from the first experiment
+a1 = load('experiment1.mat');
+
+%% Do some inspections
+
+% look at the stimuli (first frame of each of 23 stimuli).
+% the order is down and then right.
+figure; setfigurepos([100 100 600 400]);
+imagesc(makeimagestack(permute(double(a1.stimuli(:,:,1,:)),[1 2 4 3]),[],0));
+colormap(gray); colorbar;
+axis image tight;
+title('Stimuli');
+%%
+
+% look at the group-averaged beta weights for VWFA during the fixation task
+figure; setfigurepos([100 100 600 200]); hold on;
+beta =   a1.groupbeta(5,:,1);
+betase = a1.groupbetase(5,:,1);
+bar(beta);
+errorbar2(1:length(beta),beta,betase,'v','r-','LineWidth',2);
+xlabel('Stimulus number');
+ylabel('BOLD signal (% change)');
+title('VWFA responses during fixation task');
+%%
+
+%% Perform some pre-processing of the stimuli
+
+% The rationale is that there are a series of image processing steps
+% that occur before the free parameters of the model take influence.
+% Thus, we can do these computations up front before we move
+% on to model fitting.
+
+% convert to single format so that we can actually do computations.
+% also, reshape so that all of the stimulus images lie along the third dimension.
+X = reshape(single(a1.stimuli),[500 500 10*23]);
+
+% resize the images to 250 pixels x 250 pixels to reduce computational burden.
+X = single(processmulti(@imresize,double(X),[250 250]));  % dimensions are now 250 x 250 x 10*23
+
+% note that pixel values are proportional to actual luminance values,
+% so no special handling of gamma is required.
+
+% convert the pixel range from [0,254] to [-.5,.5] by rescaling values
+% and subtracting off the value corresponding to the gray background.
+% after this step, the gray background is at 0.
+X = (X/254) - .5;
+
+%% Prepare V1-like representation of the stimuli
+
+% define
+pxtodeg = 1/240 * 2;       % 240 pixels correspond to 2 degrees of visual angle
+stimsize = 500 * pxtodeg;  % compute the total size of the stimulus in deg
+
+% next, we want to project onto V1-like filters.
+% we will use filters tuned at 4 cycles per deg.
+
+% how many cycles per stimulus field-of-view should the filters be tuned at?
+cpfov = 4*stimsize;
+
+% go ahead and do the projection.  we will get a lot of outputs, but 
+% the one we care about is f, which has dimensions 10*23 images x 16384 channels.
+% the channels are ordered like (2 phases)*(8 orientations)*(32 positions x 32 positions).
+[f,gbrs,gaus,sds,indices,info] = applymultiscalegaborfilters(squish(X,2)',cpfov,-1,1,8,2,0.01,2,0);
+%%
+
+% combine quadrature-phase filter outputs (complex-cell energy model)
+f = sqrt(blob(f.^2,2,2));  % dimensions are now 10*23 images x 8192 channels
+
+% inspect filter outputs for the first image of the 5th stimulus.
+% the order is 0 deg (horizontal filter), 22.5 deg, 44.5 deg, etc., rotating counter-clockwise.
+figure; setfigurepos([100 100 800 200]);
+imagesc(makeimagestack(permute(reshape(f(10*4+1,:),8,32,32),[2 3 1]),[],[],[1 8]));
+colormap(hot); colorbar;
+axis image tight;
+title('Filter outputs');
+%%
+
+% now we want to apply divisive normalization.
+
+% do some reshaping
+f = permute(reshape(f,10,23,[]),[1 3 2]);  % now: 10 x 8192 channels x 23
+
+% compute the average across 8 orientations (at each position) and place in the imaginary component
+f = f + j*upsamplematrix(blob(f,2,8)/8,8,2,[],'nearest');
+
+% define parameters (taken identically from Kay et al., PLOS Comp Bio, 2013)
+ee = 1;
+ss = 0.5;
+
+% perform divisive normalization
+f = real(f).^ee./(ss.^ee+imag(f).^ee);
+
+% the dimensions of f are now 10 images x 8192 channels x 23 stimuli.
+
+% NOTE:
+% - In the paper, one of the control models is called "Template model (omit first stage)".
+%   This model omits the first stage of the model and computes a template operation on a 
+%   pixel representation of the stimuli. To implement this model, instead of performing 
+%   the steps above, one would just prepare f as:
+%     f = permute(reshape(squish(X+.5,2),250*250,10,23),[2 1 3]);
+%   This sets up f with dimensions 10 images x (250 pixels * 250 pixels) x 23 stimuli
+%   and places the units of f into the range [0,1].
+
+%% Compute templates
+
+% which stimuli do we want to create templates from?
+templateix = [9 5];   % word, face
+
+% calculate templates
+templates = [];  % dimensions will be 2 templates x 8192 channels
+for qq=1:length(templateix)
+  templates(qq,:) = mean(f(:,:,templateix(qq)),1);  % compute the mean of the 10 images in the V1-like representation
+end
+
+% NOTE:
+% - A few different control models are evaluated in the paper, based on modifying
+%   the template used in the model.
+%   - To implement "Template model (non-selective template)", one would do:
+%       templates(3,:) = 1;
+%   - To implement "Template model (mixed template)", one would do:
+%       templates(3,:) = mean(unitlength(templates(1:2,:),2),1);  % this template is a mix of "word" and "face"
+%   - To implement "Template model (random template)", one would do:
+%       templates(3,:) = rand(1,size(templates,2));
+
+%% Pre-compute some quantities
+
+% To reduce computational time, we pre-compute as much as we can before we proceed to model fitting.
+
+% compute "A" which is the dot-product of the stimulus and the template (S-dot-T in the paper)
+A = squish(permute(f,[1 3 2]),2) * templates';  % 10*23 images x 2 templates
+
+% compute "B" which is the average of all of the channels in the stimulus (S-bar in the paper)
+B = mean(squish(permute(f,[1 3 2]),2),2);       % 10*23 images x 1
+
+%% Prepare for model fitting
+
+% define model names
+modelnames = { ...
+  'Flat' ...                % Flat-response model that predicts the same response level for each data point 
+  'CategoryWord' ...        % Category model using words vs. non-words
+  'CategoryFace' ...        % Category model using faces vs. non-faces
+  'TemplateWordOnlySub' ... % Template model (only subtractive normalization) using a word template
+  'TemplateWordOnlyDiv' ... % Template model (only divisive normalization) using a word template
+  'TemplateWord' ...        % Template model using a word template
+  'TemplateFaceOnlySub' ... % Template model (only subtractive normalization) using a face template
+  'TemplateFaceOnlyDiv' ... % Template model (only divisive normalization) using a face template
+  'TemplateFace' ...        % Template model using a face template
+  };
+
+% which ROIs do we want to fit?
+whroi = [5 6];  % VWFA, FFA
+
+% calculate some things
+nr = length(whroi);      % number of ROIs we will be fitting
+nd = 23;                 % number of data points
+nfolds = 23;             % number of folds of cross-validation to perform
+nm = length(modelnames); % number of models
+
+% prepare the data (group-averaged beta weights during the fixation task)
+data =   permute(double(a1.groupbeta(whroi,:,1)),[2 1 3]);    % 23 stimuli x ROIs
+datase = permute(double(a1.groupbetase(whroi,:,1)),[2 1 3]);  % 23 stimuli x ROIs
+
+% compute noise ceilings:
+%   nc is ROIs x 1
+%   ncdist is ROIs x simulations
+[nc,ncdist] = calcnoiseceiling(data',datase');
+%%
+
+% define the metric to use when quantifying model accuracy.
+% we use an R^2 metric where variance is computed relative to 0% BOLD change.
+metricfun = @(x,y) calccod(x,y,1,0,0);
+
+% prepare category labels
+categories = a1.groupcategoryjudgment;
+categories{1} = '';
+
+%% Fit models
+
+% initialize outputs (details provided below)
+modelfit =             NaN*zeros(nd,nr,nm);      % data points x ROIs x models
+modelparams =          cell(1,nm);               % 1 x models (each element is parameters x ROIs)
+modelpred =            NaN*zeros(nd,nr,nm);      % data points x ROIs x models
+modelperformance =     NaN*zeros(nr,nm);         % ROIs x models
+
+% fit models
+for xx=1:2
+  
+  switch xx
+  case 1
+  
+    % in this case, we do not cross-validate and instead just fit all the data
+    xvalscheme = 0;
+    extraopt = {'dosave','modelfit'};  % indicate that we want the 'modelfit' output
+    
+  case 2
+  
+    % in this case, we perform cross-validation, so we need to define the cross-validation scheme
+    xvalscheme = ones(nfolds,nd);
+    for p=1:nfolds
+      ix = picksubset(1:nd,[nfolds p]);
+      xvalscheme(p,ix) = -1;
+    end
+    extraopt = {};
+    
+    % compute how we can go back to the original order
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme);
+
+  end
+
+  % loop over models
+  for mm=1:nm
+
+    switch mm
+
+    % Flat-response model
+    case 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % Category model using words vs. non-words
+    case 2
+      ix = ismember(categories,'WORD');
+      X = zeros(nd,2);
+      X( ix,1) = 1;  % first column is 1 for words
+      X(~ix,2) = 1;  % second column is 1 for non-words
+      seed0 = 0.1 * ones(1,2);
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,2); Inf(1,2)] @(p,x) x*p'}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % Category model using faces vs. non-faces
+    case 3
+      ix = ismember(categories,'FACE');
+      X = zeros(nd,2);
+      X( ix,1) = 1;  % first column is 1 for faces
+      X(~ix,2) = 1;  % second column is 1 for non-faces
+      seed0 = 0.1 * ones(1,2);
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,2); Inf(1,2)] @(p,x) x*p'}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+    
+    % Template models
+    case {4 5 6 7 8 9}
+    
+      % calculate some flags
+      complextyp = mod2(mm,3);       % 1 means only subtractive; 2 means only divisive; 3 means both
+      templatenum = ceil((mm-3)/3);  % 1 means use word template; 2 means use face template
+
+      % pre-condition A and B. we collect the results into
+      % stimAB which is 10*23 images x 2, where the columns contain the
+      % pre-conditioned A and the pre-conditioned B.
+      stimAB = [A(:,templatenum)/mean(A(:,templatenum)) B/mean(B)];
+      
+      switch complextyp
+      
+      % this is the only subtractive model
+      case 1
+        cs = [0 .5 1 1.5 2 3 5];
+        seed0 = [];
+        cnt = 1;
+        for q=1:length(cs)
+          seed0(cnt,:) = [10 cs(q)];
+          cnt = cnt + 1;
+        end
+        opt1 = struct('stimulus',permute(reshape(stimAB,[10 nd 2]),[2 3 1]),'data',data, ...
+                      'model',{{[] [-Inf(1,2); Inf(1,2)] ...
+                                @(p,x) p(1) * posrect(x(:,1)-p(2)*x(:,2))}}, ...
+                      'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                      'optimoptions',{{'Display','off'}},extraopt{:});
+      
+      % this is the only divisive model
+      case 2
+        bs = [.01 .05 .1 .5 1 5 10];
+        seed0 = [];
+        cnt = 1;
+        for p=1:length(bs)
+          seed0(cnt,:) = [10 bs(p)];
+          cnt = cnt + 1;
+        end
+        opt1 = struct('stimulus',permute(reshape(stimAB,[10 nd 2]),[2 3 1]),'data',data, ...
+                      'model',{{[] [-Inf(1,2); Inf(1,2)] ...
+                                @(p,x) p(1) * (x(:,1) ./ (p(2)+x(:,2)))}}, ...
+                      'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                      'optimoptions',{{'Display','off'}},extraopt{:});
+
+      % this is the full model
+      case 3
+        bs = [.01 .05 .1 .5 1 5 10];
+        cs = [0 .5 1 1.5 2 3 5];
+        seed0 = [];
+        cnt = 1;
+        for p=1:length(bs)
+          for q=1:length(cs)
+            seed0(cnt,:) = [10 bs(p) cs(q)];
+            cnt = cnt + 1;
+          end
+        end
+        opt1 = struct('stimulus',permute(reshape(stimAB,[10 nd 2]),[2 3 1]),'data',data, ...
+                      'model',{{[] [-Inf(1,3); Inf(1,3)] ...
+                                @(p,x) p(1) * (posrect(x(:,1)-p(3)*x(:,2)) ./ (p(2)+x(:,2)))}}, ...
+                      'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                      'optimoptions',{{'Display','off'}},extraopt{:});
+      end
+
+    end
+
+    % finally, fit the model
+    results = fitnonlinearmodel(opt1);
+
+    % take the results and store them
+    switch xx
+    case 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    case 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    end
+
+  end
+
+end
+%%
+
+% undo the effect of the cross-validation re-ordering. after this step,
+% the data points are back in the original order.
+modelpred = modelpred(xvalschemeREV,:,:);
+
+% ok, the model fitting is complete.
+%
+% modeling results are compiled into the following variables:
+% - modelfit is data points x ROIs x models. this gives, for each model
+%   applied to each ROI, the model fit to all data points (no cross-validation).
+% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,
+%   which stores the estimated parameters from each model applied to each ROI.
+% - modelpred is data points x ROIs x models. this is the set of cross-validated 
+%   model predictions, aggregated across all cross-validation iterations.
+% - modelperformance is ROIs x models. this is the quantification of model
+%   cross-validation accuracy.
+
+%% Inspect modeling results
+
+% define
+rr = 1;           % which ROI to look at
+whmodel = [2 6];  % which models to look at
+
+% make a figure
+figure; setfigurepos([100 100 600 250]); hold on;
+xxx = 1:nd;
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,'FaceColor','k');
+set(errorbar2(xxx,yyy,yyyse,'v','k-','LineWidth',2),'Color',[.5 .5 .5]);
+cmap0 = [0 0 1;
+         1 0 0];
+h = []; h2 = [];
+for mm=1:length(whmodel)
+  h(mm)  = plot(xxx, modelfit(:,rr,whmodel(mm)),'o-','Color',(cmap0(mm,:)+2*[1 1 1])/3,'LineWidth',2);
+  h2(mm) = plot(xxx,modelpred(:,rr,whmodel(mm)),'o-','Color',cmap0(mm,:),'LineWidth',2);
+end
+ylabel('BOLD response (% change)');
+legend(h2,modelnames(whmodel),'Location','EastOutside');
+xlabel('Stimulus number');
+title(sprintf('Modeling results for %s',a1.roilabels{whroi(rr)}));
+%%
+
+##### SOURCE END #####
+--></body></html>

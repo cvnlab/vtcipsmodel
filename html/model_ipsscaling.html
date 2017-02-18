@@ -1,0 +1,732 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Example script illustrating the IPS-scaling model and various control models</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-02-18"><meta name="DC.source" content="model_ipsscaling.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Example script illustrating the IPS-scaling model and various control models</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Add code to the MATLAB path</a></li><li><a href="#2">Load data</a></li><li><a href="#3">Prepare for model fitting</a></li><li><a href="#5">Fit models</a></li><li><a href="#7">Inspect modeling results</a></li></ul></div><h2>Add code to the MATLAB path<a name="1"></a></h2><pre class="codeinput"><span class="comment">% make sure to change this line to reflect where you have put</span>
+<span class="comment">% the knkutils repository (http://github.com/kendrickkay/knkutils/)</span>
+addpath(genpath(<span class="string">'/home/stone/kendrick/knkutils'</span>));
+</pre><h2>Load data<a name="2"></a></h2><pre class="codeinput"><span class="comment">% load in the data from the first experiment</span>
+a1 = load(<span class="string">'experiment1.mat'</span>);
+</pre><h2>Prepare for model fitting<a name="3"></a></h2><pre class="codeinput"><span class="comment">% define model names</span>
+modelnames = { <span class="keyword">...</span>
+  <span class="string">'Flat'</span> <span class="keyword">...</span><span class="comment">                     % Flat-response model that predicts the same response level for each data point</span>
+  <span class="string">'Task-invariant'</span> <span class="keyword">...</span><span class="comment">           % Task has no effect (use one set of responses to fit all tasks)</span>
+  <span class="string">'Additive'</span> <span class="keyword">...</span><span class="comment">                 % Add a constant (same for both tasks)</span>
+  <span class="string">'AdditiveTS'</span> <span class="keyword">...</span><span class="comment">               % Add a separate constant for each task</span>
+  <span class="string">'Scaling'</span> <span class="keyword">...</span><span class="comment">                  % Scale by a constant (same for both tasks)</span>
+  <span class="string">'ScalingTS'</span> <span class="keyword">...</span><span class="comment">                % Scale by a separate constant for each task</span>
+  <span class="string">'AreaSpecificWord'</span> <span class="keyword">...</span><span class="comment">         % Like ScalingTS but the scaling occurs only for words</span>
+  <span class="string">'AreaSpecificFace'</span> <span class="keyword">...</span><span class="comment">         % Like ScalingTS but the scaling occurs only for faces</span>
+  <span class="string">'IPS-additive'</span> <span class="keyword">...</span><span class="comment">             % Add a scaled version of the IPS signal</span>
+  <span class="string">'IPS-scaling'</span> <span class="keyword">...</span><span class="comment">              % Multiply by a scaled version of the IPS signal</span>
+  };
+
+<span class="comment">% which ROIs do we want to fit?</span>
+whroi = [5 6];  <span class="comment">% VWFA, FFA</span>
+
+<span class="comment">% which ROI supplies the top-down signal?</span>
+whtopdown = 8;  <span class="comment">% IPS</span>
+
+<span class="comment">% calculate some things</span>
+n = 23;                   <span class="comment">% number of stimuli</span>
+nr = length(whroi);       <span class="comment">% number of ROIs we will be fitting</span>
+nd = 3*n;                 <span class="comment">% number of data points (3 tasks, 23 stimuli)</span>
+nfolds = 2*n;             <span class="comment">% number of folds of cross-validation (we resample over the categorization and one-back tasks)</span>
+nm = length(modelnames);  <span class="comment">% number of models</span>
+
+<span class="comment">% prepare the data (group-averaged beta weights during all three tasks)</span>
+data =        squish(permute(double(a1.groupbeta(whroi,:,:)),[2 3 1]),2);     <span class="comment">% 23*3 conditions x ROIs</span>
+datase =      squish(permute(double(a1.groupbetase(whroi,:,:)),[2 3 1]),2);   <span class="comment">% 23*3 conditions x ROIs</span>
+datatopdown = squish(permute(double(a1.groupbeta(whtopdown,:,:)),[2 3 1]),2); <span class="comment">% 23*3 conditions x 1</span>
+
+<span class="comment">% repeat datatopdown for code convenience</span>
+datatopdown = repmat(datatopdown,[1 size(data,2)]);                           <span class="comment">% 23*3 conditions x ROIs</span>
+
+<span class="comment">% insert NaNs into datatopdown for the fixation responses, so that</span>
+<span class="comment">% datatopdown does not influence the model for these data points.</span>
+<span class="comment">% this is handled in the model fitting below.</span>
+datatopdown(1:n,:) = NaN;                                                     <span class="comment">% 23*3 conditions x ROIs</span>
+
+<span class="comment">% NOTE:</span>
+<span class="comment">% - A few control models are evaluated in the paper but are not explicitly done here</span>
+<span class="comment">%   in order to keep the code compact.</span>
+<span class="comment">%   - To implement "IPS-scaling (shuffle)", one would perform:</span>
+<span class="comment">%       datatopdown = cat(1,datatopdown(1:n,:), ...</span>
+<span class="comment">%                           permutedim(datatopdown(n+(1:2*n),:),1,[],1));</span>
+<span class="comment">%   - To implement "IPS-scaling (shuffle within task)", one would perform:</span>
+<span class="comment">%       datatopdown = cat(1,datatopdown(1:n,:), ...</span>
+<span class="comment">%                           permutedim(datatopdown(n+(1:n),:),1,[],1), ...</span>
+<span class="comment">%                           permutedim(datatopdown(2*n+(1:n),:),1,[],1));</span>
+
+<span class="comment">% compute noise ceiling:</span>
+<span class="comment">%   nc is ROIs x 1</span>
+<span class="comment">%   ncdist is ROIs x simulations</span>
+[nc,ncdist] = calcnoiseceiling(data(n+(1:2*n),:)',datase(n+(1:2*n),:)');
+</pre><pre class="codeoutput">calculating noise ceiling..
+..
+.
+.
+.
+..
+.
+..
+.
+.
+..
+..
+.
+.
+done.
+</pre><pre class="codeinput"><span class="comment">% define the metric to use when quantifying model accuracy.</span>
+<span class="comment">% we use an R^2 metric where variance is computed relative to 0% BOLD change.</span>
+metricfun = @(x,y) calccod(x,y,1,0,0);
+
+<span class="comment">% prepare category labels</span>
+categories = a1.groupcategoryjudgment;
+categories{1} = <span class="string">''</span>;
+</pre><h2>Fit models<a name="5"></a></h2><pre class="codeinput"><span class="comment">% initialize outputs (details provided below)</span>
+modelfit =             NaN*zeros(nd,nr,nm);      <span class="comment">% data points x ROIs x models</span>
+modelparams =          cell(1,nm);               <span class="comment">% 1 x models (each element is parameters x ROIs)</span>
+modelpred =            NaN*zeros(2*n,nr,nm);     <span class="comment">% data points (2*n) x ROIs x models</span>
+modelperformance =     NaN*zeros(nr,nm);         <span class="comment">% ROIs x models</span>
+
+<span class="comment">% fit models</span>
+<span class="keyword">for</span> xx=1:2
+
+  <span class="keyword">switch</span> xx
+  <span class="keyword">case</span> 1
+
+    <span class="comment">% in this case, we do not cross-validate and instead just fit all the data</span>
+    xvalscheme = 0;
+    extraopt = {<span class="string">'dosave'</span>,<span class="string">'modelfit'</span>};  <span class="comment">% indicate that we want the 'modelfit' output</span>
+
+  <span class="keyword">case</span> 2
+
+    <span class="comment">% in this case, we perform cross-validation, so we need to define the cross-validation scheme</span>
+    xvalscheme = ones(nfolds,nd);
+    <span class="keyword">for</span> p=1:nfolds
+      ix = picksubset(1:2*n,[nfolds p]);
+      xvalscheme(p,n+ix) = -1;  <span class="comment">% notice that the cross-validation is done over the categorization and one-back tasks</span>
+    <span class="keyword">end</span>
+    extraopt = {};
+
+    <span class="comment">% compute how we can go back to the original order</span>
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme(:,n+(1:2*n)));
+
+  <span class="keyword">end</span>
+
+  <span class="comment">% loop over models</span>
+  <span class="keyword">for</span> mm=1:nm
+
+    <span class="keyword">switch</span> mm
+
+    <span class="comment">% Flat-response model</span>
+    <span class="keyword">case</span> 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,data, <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Task-invariant model</span>
+    <span class="keyword">case</span> 2
+      X = repmat(eye(n),[3 1]);
+      seed0 = @(ix) data(1:n,ix)';
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n); Inf(1,n)] @(p,x) x*p'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n); Inf(1,n)] @(ss) @(p,x) x*p'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Additive model</span>
+    <span class="keyword">case</span> 3
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:2*n),n+1) = 2;
+      seed0 = @(ix) [data(1:n,ix)' 0 0];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf; Inf(1,n+2)] @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf; Inf(1,n+2)] <span class="keyword">...</span>
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% AdditiveTS model</span>
+    <span class="keyword">case</span> 4
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:n),n+1) = 2;
+      X(2*n+(1:n),n+1) = 3;
+      seed0 = @(ix) [data(1:n,ix)' 0 0 0];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] <span class="keyword">...</span>
+                                                                @(ss) @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% Scaling model</span>
+    <span class="keyword">case</span> 5
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:2*n),n+1) = 2;
+      seed0 = @(ix) [data(1:n,ix)' 1 1];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf; Inf(1,n+2)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf; Inf(1,n+2)] <span class="keyword">...</span>
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% ScalingTS model</span>
+    <span class="keyword">case</span> 6
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:n),n+1) = 2;
+      X(2*n+(1:n),n+1) = 3;
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] <span class="keyword">...</span>
+                                                                @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% AreaSpecificWord model</span>
+    <span class="keyword">case</span> 7
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      specialix = find(ismember(categories,<span class="string">'WORD'</span>));
+      X(:,n+1) = 1;               <span class="comment">% default is 1</span>
+      X(n+specialix,n+1) = 2;     <span class="comment">% words are allowed to change in categorization task</span>
+      X(2*n+specialix,n+1) = 3;   <span class="comment">% words are allowed to change in one-back task</span>
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] <span class="keyword">...</span>
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% AreaSpecificFace model</span>
+    <span class="keyword">case</span> 8
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      specialix = find(ismember(categories,<span class="string">'FACE'</span>));
+      X(:,n+1) = 1;                <span class="comment">% default is 1</span>
+      X(n+specialix,n+1) = 2;      <span class="comment">% faces are allowed to change in categorization task</span>
+      X(2*n+specialix,n+1) = 3;    <span class="comment">% faces are allowed to change in one-back task</span>
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] <span class="keyword">...</span>
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% IPS-additive model</span>
+    <span class="keyword">case</span> 9
+      X = [repmat(eye(n),[3 1]) (1:3*n)'];
+      seed0 = @(ix) [data(1:n,ix)' datatopdown(:,ix)' 0 0];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] <span class="keyword">...</span>
+                      @(p,x) x(:,1:n)*p(1:n)' + nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2))} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] <span class="keyword">...</span>
+                @(ss) @(p,x) x(:,1:n)*p(1:n)' + nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2))}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="comment">% IPS-scaling model</span>
+    <span class="keyword">case</span> 10
+      X = [repmat(eye(n),[3 1]) (1:3*n)'];
+      seed0 = @(ix) [data(1:n,ix)' datatopdown(:,ix)' 0 1];
+      opt1 = struct(<span class="string">'stimulus'</span>,X,<span class="string">'data'</span>,@(ix) data(:,ix),<span class="string">'vxs'</span>,1:size(data,2), <span class="keyword">...</span>
+                    <span class="string">'model'</span>,{ <span class="keyword">...</span>
+                            {{[] [NaN(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] <span class="keyword">...</span>
+                      @(p,x) x(:,1:n)*p(1:n)' .* nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2),1)} <span class="keyword">...</span>
+                             {@(ss) ss [-Inf(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] <span class="keyword">...</span>
+                @(ss) @(p,x) x(:,1:n)*p(1:n)' .* nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2),1)}}}, <span class="keyword">...</span>
+                    <span class="string">'seed'</span>,seed0,<span class="string">'resampling'</span>,xvalscheme,<span class="string">'metric'</span>,metricfun, <span class="keyword">...</span>
+                    <span class="string">'optimoptions'</span>,{{<span class="string">'Display'</span>,<span class="string">'off'</span>}},extraopt{:});
+
+    <span class="keyword">end</span>
+
+    <span class="comment">% finally, fit the model</span>
+    results = fitnonlinearmodel(opt1);
+
+    <span class="comment">% take the results and store them</span>
+    <span class="keyword">switch</span> xx
+    <span class="keyword">case</span> 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    <span class="keyword">case</span> 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    <span class="keyword">end</span>
+
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">*** fitnonlinearmodel: started at 18-Feb-2017 09:35:51. ***
+*** fitnonlinearmodel: outputdir = , chunksize = 2, chunknum = 1
+*** fitnonlinearmodel: processing voxel 1 (1 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 ].
+      the estimated parameters are [0.332 ].
+    trainperformance is 73.16. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 1 (1 of 2) took 0.6 seconds. ***
+*** fitnonlinearmodel: processing voxel 2 (2 of 2). ***
+  starting resampling case 1 of 1.
+      the seed is [0.100 ].
+      the estimated parameters are [0.448 ].
+    trainperformance is 69.07. testperformance is NaN.
+  aggregatedtestperformance is NaN.
+*** fitnonlinearmodel: voxel 2 (2 of 2) took 0.6 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:35:51 (0.0 minutes). ***
+
+[...SNIP...]
+
+  starting resampling case 46 of 46.
+      for model 1 of 2, the seed is [0.041 0.152 0.165 0.196 0.273 0.219 0.365 0.405 0.524 0.095 0.100 0.160 0.109 0.123 0.204 0.283 0.178 0.118 0.488 0.443 0.360 0.279 0.223 NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN 0.237 0.285 0.212 0.129 0.149 0.350 0.257 0.119 0.149 0.388 0.404 0.350 0.289 0.300 0.170 0.167 0.282 0.368 0.307 0.202 0.345 0.303 0.416 0.113 0.286 0.358 0.273 0.126 0.388 0.293 0.248 0.201 0.318 0.476 0.514 0.459 0.494 0.245 0.222 0.447 0.480 0.324 0.263 0.507 0.448 0.563 0.000 1.000 ].
+      the estimated parameters are [0.041 0.152 0.165 0.196 0.273 0.219 0.365 0.405 0.524 0.095 0.100 0.160 0.109 0.123 0.204 0.283 0.178 0.118 0.488 0.443 0.360 0.279 0.223 NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN 0.237 0.285 0.212 0.129 0.149 0.350 0.257 0.119 0.149 0.388 0.404 0.350 0.289 0.300 0.170 0.167 0.282 0.368 0.307 0.202 0.345 0.303 0.416 0.113 0.286 0.358 0.273 0.126 0.388 0.293 0.248 0.201 0.318 0.476 0.514 0.459 0.494 0.245 0.222 0.447 0.480 0.324 0.263 0.507 0.448 0.563 1.879 1.006 ].
+      for model 2 of 2, the seed is [0.041 0.152 0.165 0.196 0.273 0.219 0.365 0.405 0.524 0.095 0.100 0.160 0.109 0.123 0.204 0.283 0.178 0.118 0.488 0.443 0.360 0.279 0.223 NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN 0.237 0.285 0.212 0.129 0.149 0.350 0.257 0.119 0.149 0.388 0.404 0.350 0.289 0.300 0.170 0.167 0.282 0.368 0.307 0.202 0.345 0.303 0.416 0.113 0.286 0.358 0.273 0.126 0.388 0.293 0.248 0.201 0.318 0.476 0.514 0.459 0.494 0.245 0.222 0.447 0.480 0.324 0.263 0.507 0.448 0.563 1.879 1.006 ].
+      the estimated parameters are [0.009 0.151 0.179 0.216 0.247 0.346 0.432 0.471 0.493 0.079 0.111 0.102 0.098 0.121 0.203 0.214 0.149 0.186 0.444 0.441 0.264 0.188 0.122 NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN 0.237 0.285 0.212 0.129 0.149 0.350 0.257 0.119 0.149 0.388 0.404 0.350 0.289 0.300 0.170 0.167 0.282 0.368 0.307 0.202 0.345 0.303 0.416 0.113 0.286 0.358 0.273 0.126 0.388 0.293 0.248 0.201 0.318 0.476 0.514 0.459 0.494 0.245 0.222 0.447 0.480 0.324 0.263 0.507 0.448 0.563 3.247 0.733 ].
+    trainperformance is 98.78. testperformance is 43.45.
+  aggregatedtestperformance is 97.90.
+*** fitnonlinearmodel: voxel 1 (1 of 2) took 3.8 seconds. ***
+*** fitnonlinearmodel: ended at 18-Feb-2017 09:36:21 (0.1 minutes). ***
+</pre><pre class="codeinput"><span class="comment">% undo the effect of the cross-validation re-ordering. after this step,</span>
+<span class="comment">% the data points are back in the original order (across the categorization</span>
+<span class="comment">% and one-back tasks).</span>
+modelpred = modelpred(xvalschemeREV,:,:);
+
+<span class="comment">% ok, the model fitting is complete.</span>
+<span class="comment">%</span>
+<span class="comment">% modeling results are compiled into the following variables:</span>
+<span class="comment">% - modelfit is data points x ROIs x models. this gives, for each model</span>
+<span class="comment">%   applied to each ROI, the model fit to all data points (no cross-validation).</span>
+<span class="comment">% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,</span>
+<span class="comment">%   which stores the estimated parameters from each model applied to each ROI.</span>
+<span class="comment">% - modelpred is data points x ROIs x models. this is the set of cross-validated</span>
+<span class="comment">%   model predictions, aggregated across all cross-validation iterations.</span>
+<span class="comment">% - modelperformance is ROIs x models. this is the quantification of model</span>
+<span class="comment">%   cross-validation accuracy.</span>
+</pre><h2>Inspect modeling results<a name="7"></a></h2><pre class="codeinput"><span class="comment">% define</span>
+rr = 1;            <span class="comment">% which ROI to look at</span>
+whmodel = [2 10];  <span class="comment">% which models to look at</span>
+
+<span class="comment">% make a figure</span>
+figure; setfigurepos([100 100 950 250]); hold <span class="string">on</span>;
+xxx = 1:3*n;
+xxxALT = n+(1:2*n);
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,<span class="string">'FaceColor'</span>,<span class="string">'k'</span>);
+set(errorbar2(xxx,yyy,yyyse,<span class="string">'v'</span>,<span class="string">'k-'</span>,<span class="string">'LineWidth'</span>,2),<span class="string">'Color'</span>,[.5 .5 .5]);
+cmap0 = [0 0 1;
+         1 0 0];
+h = []; h2 = [];
+<span class="keyword">for</span> mm=1:length(whmodel)
+  h(mm)  = plot(xxx,    modelfit(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,(cmap0(mm,:)+2*[1 1 1])/3,<span class="string">'LineWidth'</span>,2);
+  h2(mm) = plot(xxxALT,modelpred(:,rr,whmodel(mm)),<span class="string">'o-'</span>,<span class="string">'Color'</span>,cmap0(mm,:),<span class="string">'LineWidth'</span>,2);
+<span class="keyword">end</span>
+ylabel(<span class="string">'BOLD response (% change)'</span>);
+legend(h2,modelnames(whmodel),<span class="string">'Location'</span>,<span class="string">'EastOutside'</span>);
+xlabel(<span class="string">'Stimulus number'</span>);
+title(sprintf(<span class="string">'Modeling results for %s'</span>,a1.roilabels{whroi(rr)}));
+</pre><img vspace="5" hspace="5" src="model_ipsscaling_01.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example script illustrating the IPS-scaling model and various control models
+
+%% Add code to the MATLAB path
+
+% make sure to change this line to reflect where you have put
+% the knkutils repository (http://github.com/kendrickkay/knkutils/)
+addpath(genpath('/home/stone/kendrick/knkutils'));
+
+%% Load data
+
+% load in the data from the first experiment
+a1 = load('experiment1.mat');
+
+%% Prepare for model fitting
+
+% define model names
+modelnames = { ...
+  'Flat' ...                     % Flat-response model that predicts the same response level for each data point
+  'Task-invariant' ...           % Task has no effect (use one set of responses to fit all tasks)
+  'Additive' ...                 % Add a constant (same for both tasks)
+  'AdditiveTS' ...               % Add a separate constant for each task
+  'Scaling' ...                  % Scale by a constant (same for both tasks)
+  'ScalingTS' ...                % Scale by a separate constant for each task
+  'AreaSpecificWord' ...         % Like ScalingTS but the scaling occurs only for words
+  'AreaSpecificFace' ...         % Like ScalingTS but the scaling occurs only for faces
+  'IPS-additive' ...             % Add a scaled version of the IPS signal
+  'IPS-scaling' ...              % Multiply by a scaled version of the IPS signal
+  };
+
+% which ROIs do we want to fit?
+whroi = [5 6];  % VWFA, FFA
+
+% which ROI supplies the top-down signal?
+whtopdown = 8;  % IPS
+
+% calculate some things
+n = 23;                   % number of stimuli
+nr = length(whroi);       % number of ROIs we will be fitting
+nd = 3*n;                 % number of data points (3 tasks, 23 stimuli)
+nfolds = 2*n;             % number of folds of cross-validation (we resample over the categorization and one-back tasks)
+nm = length(modelnames);  % number of models
+
+% prepare the data (group-averaged beta weights during all three tasks)
+data =        squish(permute(double(a1.groupbeta(whroi,:,:)),[2 3 1]),2);     % 23*3 conditions x ROIs
+datase =      squish(permute(double(a1.groupbetase(whroi,:,:)),[2 3 1]),2);   % 23*3 conditions x ROIs
+datatopdown = squish(permute(double(a1.groupbeta(whtopdown,:,:)),[2 3 1]),2); % 23*3 conditions x 1
+
+% repeat datatopdown for code convenience
+datatopdown = repmat(datatopdown,[1 size(data,2)]);                           % 23*3 conditions x ROIs
+
+% insert NaNs into datatopdown for the fixation responses, so that 
+% datatopdown does not influence the model for these data points.
+% this is handled in the model fitting below.
+datatopdown(1:n,:) = NaN;                                                     % 23*3 conditions x ROIs
+
+% NOTE:
+% - A few control models are evaluated in the paper but are not explicitly done here
+%   in order to keep the code compact.
+%   - To implement "IPS-scaling (shuffle)", one would perform:
+%       datatopdown = cat(1,datatopdown(1:n,:), ...
+%                           permutedim(datatopdown(n+(1:2*n),:),1,[],1));
+%   - To implement "IPS-scaling (shuffle within task)", one would perform:
+%       datatopdown = cat(1,datatopdown(1:n,:), ...
+%                           permutedim(datatopdown(n+(1:n),:),1,[],1), ...
+%                           permutedim(datatopdown(2*n+(1:n),:),1,[],1));
+
+% compute noise ceiling:
+%   nc is ROIs x 1
+%   ncdist is ROIs x simulations
+[nc,ncdist] = calcnoiseceiling(data(n+(1:2*n),:)',datase(n+(1:2*n),:)');
+%%
+
+% define the metric to use when quantifying model accuracy.
+% we use an R^2 metric where variance is computed relative to 0% BOLD change.
+metricfun = @(x,y) calccod(x,y,1,0,0);
+
+% prepare category labels
+categories = a1.groupcategoryjudgment;
+categories{1} = '';
+
+%% Fit models
+
+% initialize outputs (details provided below)
+modelfit =             NaN*zeros(nd,nr,nm);      % data points x ROIs x models
+modelparams =          cell(1,nm);               % 1 x models (each element is parameters x ROIs)
+modelpred =            NaN*zeros(2*n,nr,nm);     % data points (2*n) x ROIs x models
+modelperformance =     NaN*zeros(nr,nm);         % ROIs x models
+
+% fit models
+for xx=1:2
+
+  switch xx
+  case 1
+
+    % in this case, we do not cross-validate and instead just fit all the data
+    xvalscheme = 0;
+    extraopt = {'dosave','modelfit'};  % indicate that we want the 'modelfit' output
+
+  case 2
+
+    % in this case, we perform cross-validation, so we need to define the cross-validation scheme
+    xvalscheme = ones(nfolds,nd);
+    for p=1:nfolds
+      ix = picksubset(1:2*n,[nfolds p]);
+      xvalscheme(p,n+ix) = -1;  % notice that the cross-validation is done over the categorization and one-back tasks
+    end
+    extraopt = {};
+    
+    % compute how we can go back to the original order
+    [d,xvalschemeREV] = resamplingtransform(xvalscheme(:,n+(1:2*n)));
+
+  end
+  
+  % loop over models
+  for mm=1:nm
+
+    switch mm
+
+    % Flat-response model
+    case 1
+      X = ones(nd,1);
+      seed0 = 0.1 * ones(1,1);
+      opt1 = struct('stimulus',X,'data',data, ...
+                    'model',{{[] [-Inf(1,1); Inf(1,1)] @(p,x) x*p'}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % Task-invariant model
+    case 2
+      X = repmat(eye(n),[3 1]);
+      seed0 = @(ix) data(1:n,ix)';
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n); Inf(1,n)] @(p,x) x*p'} ...
+                             {@(ss) ss [-Inf(1,n); Inf(1,n)] @(ss) @(p,x) x*p'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % Additive model
+    case 3
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:2*n),n+1) = 2;
+      seed0 = @(ix) [data(1:n,ix)' 0 0];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf; Inf(1,n+2)] @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf; Inf(1,n+2)] ...
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % AdditiveTS model
+    case 4
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:n),n+1) = 2;
+      X(2*n+(1:n),n+1) = 3;
+      seed0 = @(ix) [data(1:n,ix)' 0 0 0];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] ...
+                                                                @(ss) @(p,x) x(:,1:n)*p(1:n)' + p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % Scaling model
+    case 5
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:2*n),n+1) = 2;
+      seed0 = @(ix) [data(1:n,ix)' 1 1];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf; Inf(1,n+2)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf; Inf(1,n+2)] ...
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % ScalingTS model
+    case 6
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      X(1:n,n+1) = 1;
+      X(n+(1:n),n+1) = 2;
+      X(2*n+(1:n),n+1) = 3;
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] ...
+                                                                @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+    
+    % AreaSpecificWord model
+    case 7
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      specialix = find(ismember(categories,'WORD'));
+      X(:,n+1) = 1;               % default is 1
+      X(n+specialix,n+1) = 2;     % words are allowed to change in categorization task
+      X(2*n+specialix,n+1) = 3;   % words are allowed to change in one-back task
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] ...
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % AreaSpecificFace model
+    case 8
+      X = repmat([eye(n) zeros(n,1)],[3 1]);
+      specialix = find(ismember(categories,'FACE'));
+      X(:,n+1) = 1;                % default is 1
+      X(n+specialix,n+1) = 2;      % faces are allowed to change in categorization task
+      X(2*n+specialix,n+1) = 3;    % faces are allowed to change in one-back task
+      seed0 = @(ix) [data(1:n,ix)' 1 1 1];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN -Inf -Inf; Inf(1,n+3)] @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'} ...
+                             {@(ss) ss [-Inf(1,n) NaN -Inf -Inf; Inf(1,n+3)] ...
+                                                           @(ss) @(p,x) x(:,1:n)*p(1:n)' .* p(n+x(:,n+1))'}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    % IPS-additive model
+    case 9
+      X = [repmat(eye(n),[3 1]) (1:3*n)'];
+      seed0 = @(ix) [data(1:n,ix)' datatopdown(:,ix)' 0 0];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] ...
+                      @(p,x) x(:,1:n)*p(1:n)' + nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2))} ...
+                             {@(ss) ss [-Inf(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] ...
+                @(ss) @(p,x) x(:,1:n)*p(1:n)' + nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2))}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+    
+    % IPS-scaling model
+    case 10
+      X = [repmat(eye(n),[3 1]) (1:3*n)'];
+      seed0 = @(ix) [data(1:n,ix)' datatopdown(:,ix)' 0 1];
+      opt1 = struct('stimulus',X,'data',@(ix) data(:,ix),'vxs',1:size(data,2), ...
+                    'model',{ ...
+                            {{[] [NaN(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] ...
+                      @(p,x) x(:,1:n)*p(1:n)' .* nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2),1)} ...
+                             {@(ss) ss [-Inf(1,n) NaN(1,3*n) -Inf -Inf; Inf(1,n+3*n+2)] ...
+                @(ss) @(p,x) x(:,1:n)*p(1:n)' .* nanreplace(p(n+3*n+1)*p(n+x(:,n+1))'+p(n+3*n+2),1)}}}, ...
+                    'seed',seed0,'resampling',xvalscheme,'metric',metricfun, ...
+                    'optimoptions',{{'Display','off'}},extraopt{:});
+
+    end
+
+    % finally, fit the model
+    results = fitnonlinearmodel(opt1);
+
+    % take the results and store them
+    switch xx
+    case 1
+      modelfit(:,:,mm)       = squish(results.modelfit(1,:,:),2);
+      modelparams{mm}        = squish(results.params(1,:,:),2);
+    case 2
+      modelpred(:,:,mm)      = results.modelpred;
+      modelperformance(:,mm) = results.aggregatedtestperformance(1,:);
+    end
+
+  end
+
+end
+%%
+
+% undo the effect of the cross-validation re-ordering. after this step,
+% the data points are back in the original order (across the categorization
+% and one-back tasks).
+modelpred = modelpred(xvalschemeREV,:,:);
+
+% ok, the model fitting is complete.
+%
+% modeling results are compiled into the following variables:
+% - modelfit is data points x ROIs x models. this gives, for each model
+%   applied to each ROI, the model fit to all data points (no cross-validation).
+% - modelparams is a cell vector that is 1 x models. each element is parameters x ROIs,
+%   which stores the estimated parameters from each model applied to each ROI.
+% - modelpred is data points x ROIs x models. this is the set of cross-validated 
+%   model predictions, aggregated across all cross-validation iterations.
+% - modelperformance is ROIs x models. this is the quantification of model
+%   cross-validation accuracy.
+
+%% Inspect modeling results
+
+% define
+rr = 1;            % which ROI to look at
+whmodel = [2 10];  % which models to look at
+
+% make a figure
+figure; setfigurepos([100 100 950 250]); hold on;
+xxx = 1:3*n;
+xxxALT = n+(1:2*n);
+yyy =   data(:,rr);
+yyyse = datase(:,rr);
+h = bar(xxx,yyy,1);
+set(h,'FaceColor','k');
+set(errorbar2(xxx,yyy,yyyse,'v','k-','LineWidth',2),'Color',[.5 .5 .5]);
+cmap0 = [0 0 1;
+         1 0 0];
+h = []; h2 = [];
+for mm=1:length(whmodel)
+  h(mm)  = plot(xxx,    modelfit(:,rr,whmodel(mm)),'o-','Color',(cmap0(mm,:)+2*[1 1 1])/3,'LineWidth',2);
+  h2(mm) = plot(xxxALT,modelpred(:,rr,whmodel(mm)),'o-','Color',cmap0(mm,:),'LineWidth',2);
+end
+ylabel('BOLD response (% change)');
+legend(h2,modelnames(whmodel),'Location','EastOutside');
+xlabel('Stimulus number');
+title(sprintf('Modeling results for %s',a1.roilabels{whroi(rr)}));
+%%
+
+##### SOURCE END #####
+--></body></html>
